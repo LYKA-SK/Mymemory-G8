@@ -1,47 +1,69 @@
 package com.mindvault.mymemory.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User implements UserDetails, java.io.Serializable {  // ← add Serializable
+@Table(name = "_user")
+public class User implements UserDetails {
 
-    private static final long serialVersionUID = 1L;  // ← add this line
+    private static final long serialVersionUID = 1L;
 
-    @Id
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    // ... rest of your code
 
-    private String username;
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @SuppressWarnings("unused")
+	private String username; 
     private String password;
 
-    // Default constructor
-    public User() {}
+    // --- UserDetails Implementation ---
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
-
-    // UserDetails methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        // Simple fixed role for all users. You can expand this later.
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
-    @Override public boolean isAccountNonExpired() { return true; }
-    @Override public boolean isAccountNonLocked() { return true; }
-    @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled() { return true; }
+    @Override
+    public String getUsername() {
+        return email; // Use email as the principal for login/UserDetailsService
+    }
+
+    // Standard UserDetails methods (set to true/not expired)
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }
