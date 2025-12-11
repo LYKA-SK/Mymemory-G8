@@ -18,18 +18,14 @@ public class AuthController {
 
     private final AuthService authService;
 
-   
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        // You might want to add validation here (e.g., check if email is unique)
         AuthResponse response = authService.register(request);
         return ResponseEntity.ok(response);
     }
 
-  
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        // The service layer handles authentication and JWT generation
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }

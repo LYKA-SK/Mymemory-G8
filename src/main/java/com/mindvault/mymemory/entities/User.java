@@ -1,23 +1,28 @@
 package com.mindvault.mymemory.entities;
 
-import jakarta.persistence.*;
+import java.util.Collection;
+import java.util.Collections; 
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority; // <-- NEW IMPORT
+import org.springframework.security.core.userdetails.UserDetails;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "_user")
+@Table(name = "users")
 public class User implements UserDetails {
 
     private static final long serialVersionUID = 1L;
@@ -25,28 +30,29 @@ public class User implements UserDetails {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(unique = true, nullable = false)
-    private String email;
-
+    
+    // Kept for display/storage purposes, but email is used for login
     @SuppressWarnings("unused")
 	private String username; 
+    
+    private String email;
     private String password;
-
-    // --- UserDetails Implementation ---
-
-    @Override
+    
+  
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Simple fixed role for all users. You can expand this later.
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override
     public String getUsername() {
-        return email; // Use email as the principal for login/UserDetailsService
+        return email; 
     }
 
-    // Standard UserDetails methods (set to true/not expired)
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
