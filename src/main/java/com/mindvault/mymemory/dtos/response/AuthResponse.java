@@ -1,24 +1,22 @@
 package com.mindvault.mymemory.dtos.response;
 
+import com.mindvault.mymemory.entities.User;
+
+import lombok.Data;
+
+@Data
 public class AuthResponse {
-    private String token;
-    private String type;
-    private String username;
+   private int status;
+   private String token;
+   private String message;
+   private User user;
 
-    public AuthResponse() {}
-
-    public AuthResponse(String token, String type, String username) {
-        this.token = token;
-        this.type = type;
-        this.username = username;
+    public AuthResponse(int status,String token,String message,User user ) {
+    		this.message = message;
+    		this.status = status;
+    		this.token = token;
+    		this.user = user;
     }
 
-    public String getToken() { return token; }
-    public void setToken(String token) { this.token = token; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+ 
 }

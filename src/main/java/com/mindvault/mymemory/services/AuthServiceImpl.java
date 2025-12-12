@@ -5,6 +5,8 @@ import com.mindvault.mymemory.dtos.request.RegisterRequest;
 import com.mindvault.mymemory.dtos.response.AuthResponse;
 import com.mindvault.mymemory.entities.User;
 import com.mindvault.mymemory.repositories.UserRepository;
+import com.mindvault.mymemory.security.JwtService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,26 +30,31 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalStateException("Email already registered.");
         }
         
-        // 2. Create a new User entity
-        User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .build();
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        // 2. Create a new User entity (Assuming a working User entity with a 'builder')
+        User user = new User();
+                user.setUsername(request.getUsername());
+                user.setEmail(request.getEmail());
+                user.setPassword(encodedPassword);
+                
         
-        // 3. Save the user
-        userRepository.save(user);
+                String token = jwtService.generateToken(user.getEmail());
+       User saveUser = userRepository.save(user);
+       return new AuthResponse(200, token, "successfully", saveUser);
+        
+         
 
-        // 4. Generate a JWT 
-        String jwt = jwtService.generateToken(user);
-        
-        // 5. Return the response
-        return new AuthResponse(jwt, "Bearer", user.getUsername());
+//        // 4. Generate a JWT 
+//        String jwt = jwtService.generateToken(user);
+//        
+//        // 5. Return the response
+//        return new AuthResponse(jwt, "Bearer", user.getUsername());
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
         // 1. Authenticate using email and password
+        // If credentials are bad, this throws an exception caught by Spring Security (results in 403)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
@@ -57,9 +64,9 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + request.getEmail()));
 
         // 3. Generate a JWT
-        String jwt = jwtService.generateToken(user);
+        String token = jwtService.generateToken(user.getEmail());
 
         // 4. Return the response
-        return new AuthResponse(jwt, "Bearer", user.getUsername());
+         return new AuthResponse(200, token, "successfully", user);
     }
 }
