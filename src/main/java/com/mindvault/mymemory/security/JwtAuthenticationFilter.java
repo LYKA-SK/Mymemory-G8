@@ -1,85 +1,20 @@
-//package com.mindvault.mymemory.configs;
-//
-//import com.mindvault.mymemory.services.JwtService;
-//import jakarta.servlet.FilterChain;
-//import jakarta.servlet.ServletException;
-//import jakarta.servlet.http.HttpServletRequest;
-//import jakarta.servlet.http.HttpServletResponse;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-//import org.springframework.security.core.context.SecurityContextHolder;
-//import org.springframework.security.core.userdetails.UserDetails;
-//import org.springframework.security.core.userdetails.UserDetailsService;
-//import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-//import org.springframework.stereotype.Component;
-//import org.springframework.web.filter.OncePerRequestFilter;
-//
-//import java.io.IOException;
-//
-//@Component
-//@RequiredArgsConstructor
-//public class JwtAuthenticationFilter extends OncePerRequestFilter {
-//
-//    private final JwtService jwtService;
-//    private final UserDetailsService userDetailsService;
-//
-//    @Override
-//    protected void doFilterInternal(
-//            HttpServletRequest request,
-//            HttpServletResponse response,
-//            FilterChain filterChain
-//    ) throws ServletException, IOException {
-//        
-//        final String authHeader = request.getHeader("Authorization");
-//        final String jwt;
-//        final String userEmail; 
-//
-//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
-//
-//        jwt = authHeader.substring(7);
-//        userEmail = jwtService.extractUsername(jwt); 
-//
-//        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-//            
-//            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-//            
-//            if (jwtService.isTokenValid(jwt, userDetails)) {
-//                
-//                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-//                        userDetails,
-//                        null, 
-//                        userDetails.getAuthorities()
-//                );
-//                
-//                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//                
-//                SecurityContextHolder.getContext().setAuthentication(authToken);
-//            }
-//        }
-//        
-//        filterChain.doFilter(request, response);
-//    }
-//}
-
-
 package com.mindvault.mymemory.security;
 
+import java.io.IOException;
 
-
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.*;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken; // Import this
+import org.springframework.security.core.context.SecurityContextHolder; // Import this
+import org.springframework.security.core.userdetails.UserDetails; // Import this
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource; // Import this
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.mindvault.mymemory.entities.User;
 import com.mindvault.mymemory.repositories.UserRepository;
 
-import java.io.IOException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -98,22 +33,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         final String header = request.getHeader("Authorization");
+        
+        // 1. Check for token presence and format
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = header.substring(7);
-        String email = jwtService.extractEmail(token);
+        String email = null;
+        
+        try {
+            // 2. Extract email (This might throw ExpiredJwtException, which is why we use try-catch)
+            email = jwtService.extractEmail(token);
+        } catch (Exception e) {
+            // If the token is invalid or expired, Spring Security will handle the 403/401 later 
+            // if no authentication is set. We proceed and let the AuthEntryPointJwt handle it.
+        }
 
-        if (email != null && jwtService.validateToken(token, email)) {
-            // You can store user info in request attribute for controllers
-            User user = userRepository.findByEmail(email).orElse(null);
-            if (user != null) {
-                request.setAttribute("user", user);
+
+        // 3. Validate Token and User, AND check if authentication is ALREADY set
+        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            
+            // Assuming User implements UserDetails
+            UserDetails userDetails = (UserDetails) userRepository.findByEmail(email).orElse(null);
+            
+            if (userDetails != null && jwtService.validateToken(token, userDetails.getUsername())) {
+                
+                // 4. Create Authentication object
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities() // Get roles/authorities from UserDetails
+                );
+
+                // 5. Add request details
+                authenticationToken.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                // 6. CRITICAL STEP: Set the Security Context
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
         }
 
+        // 7. Continue the chain
         filterChain.doFilter(request, response);
     }
 }

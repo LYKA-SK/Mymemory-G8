@@ -42,13 +42,6 @@ public class AuthServiceImpl implements AuthService {
        User saveUser = userRepository.save(user);
        return new AuthResponse(200, token, "successfully", saveUser);
         
-         
-
-//        // 4. Generate a JWT 
-//        String jwt = jwtService.generateToken(user);
-//        
-//        // 5. Return the response
-//        return new AuthResponse(jwt, "Bearer", user.getUsername());
     }
 
     @Override
