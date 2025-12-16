@@ -1,6 +1,7 @@
 package com.mindvault.mymemory.controllers;
 
 import com.mindvault.mymemory.dtos.request.LoginRequest;
+
 import com.mindvault.mymemory.dtos.request.RegisterRequest;
 import com.mindvault.mymemory.dtos.response.AuthResponse;
 import com.mindvault.mymemory.services.AuthService;
