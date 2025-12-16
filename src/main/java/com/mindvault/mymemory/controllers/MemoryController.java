@@ -1,74 +1,73 @@
 package com.mindvault.mymemory.controllers;
 
-import java.security.Principal; 
-import java.util.List;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.mindvault.mymemory.dtos.request.MemoryCreateRequest;
 import com.mindvault.mymemory.dtos.request.MemoryUpdateRequest;
 import com.mindvault.mymemory.dtos.response.MemoryResponse;
 import com.mindvault.mymemory.services.MemoryService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/memories")
 public class MemoryController {
 
     private final MemoryService memoryService;
-    
+
     public MemoryController(MemoryService memoryService) {
         this.memoryService = memoryService;
     }
-    
-    // C - CREATE
-    // CORRECTED: Changed @PostMapping("/create") to @PostMapping to follow REST convention
-    @PostMapping("")
-    public ResponseEntity<MemoryResponse> createMemory(
-        Principal principal, 
-        @RequestBody MemoryCreateRequest request
-    ) {
-        MemoryResponse response = memoryService.createMemory(principal.getName(), request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+
+  
+    private String extractUserEmail(UserDetails userDetails) {
+        return userDetails.getUsername(); 
     }
 
-    // R - READ (All for the current user)
+    // CREATE: POST /api/memories
+    @PostMapping
+    public ResponseEntity<MemoryResponse> createMemory(@RequestBody MemoryCreateRequest createRequest,
+                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = extractUserEmail(userDetails);
+        MemoryResponse createdMemory = memoryService.createMemory(createRequest, userEmail);
+        return new ResponseEntity<>(createdMemory, HttpStatus.CREATED);
+    }
+
+    // READ ALL: GET /api/memories
     @GetMapping
-    public ResponseEntity<List<MemoryResponse>> getAllUserMemories(Principal principal) {
-        List<MemoryResponse> memories = memoryService.getAllUserMemories(principal.getName());
+    public ResponseEntity<List<MemoryResponse>> getAllMemories(@AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = extractUserEmail(userDetails);
+        List<MemoryResponse> memories = memoryService.getAllMemories(userEmail);
         return ResponseEntity.ok(memories);
     }
-    
-    // R - READ (One by ID, scoped to the current user)
+
+    // READ BY ID: GET /api/memories/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<MemoryResponse> getMemoryById(Principal principal, @PathVariable Long id) {
-        MemoryResponse response = memoryService.getMemoryById(principal.getName(), id);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<MemoryResponse> getMemoryById(@PathVariable Long id,
+                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = extractUserEmail(userDetails);
+        MemoryResponse memory = memoryService.getMemoryById(id, userEmail);
+        return ResponseEntity.ok(memory);
     }
 
-    // U - UPDATE
+    // UPDATE: PUT /api/memories/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<MemoryResponse> updateMemory(
-        Principal principal, 
-        @PathVariable Long id, 
-        @RequestBody MemoryUpdateRequest request
-    ) {
-        MemoryResponse response = memoryService.updateMemory(principal.getName(), id, request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<MemoryResponse> updateMemory(@PathVariable Long id,
+                                                       @RequestBody MemoryUpdateRequest updateRequest,
+                                                       @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = extractUserEmail(userDetails);
+        MemoryResponse updatedMemory = memoryService.updateMemory(id, updateRequest, userEmail);
+        return ResponseEntity.ok(updatedMemory);
     }
 
-    // D - DELETE (Soft Delete)
+    // DELETE: DELETE /api/memories/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMemory(Principal principal, @PathVariable Long id) {
-        memoryService.deleteMemory(principal.getName(), id);
-        return ResponseEntity.noContent().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT) 
+    public void deleteMemory(@PathVariable Long id,
+                               @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = extractUserEmail(userDetails);
+        memoryService.deleteMemory(id, userEmail);
     }
 }
