@@ -20,3 +20,6 @@ spring:
 jwt:
   secret: ${JWT_SECRET:your_super_secret_key_which_should_be_very_long}
   expirationMs: 3600000
+
+  
+  
