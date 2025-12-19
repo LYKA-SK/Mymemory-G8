@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: mymemory
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://ep-wandering-bird-a16aa73i-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:neondb_owner}
+    password: ${SPRING_DATASOURCE_PASSWORD:npg_fLhUgc27pzEK}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  secret: ${JWT_SECRET:your_super_secret_key_which_should_be_very_long}
+  expirationMs: 3600000
