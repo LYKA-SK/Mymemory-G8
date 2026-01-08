@@ -2,6 +2,7 @@ package com.mindvault.mymemory.controllers;
 
 import com.mindvault.mymemory.dtos.request.MemoryCreateRequest;
 
+
 import com.mindvault.mymemory.dtos.request.MemoryUpdateRequest;
 import com.mindvault.mymemory.dtos.response.MemoryResponse;
 import com.mindvault.mymemory.services.MemoryService;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -71,4 +73,16 @@ public class MemoryController {
         String userEmail = extractUserEmail(userDetails);
         memoryService.deleteMemory(id, userEmail);
     }
+    @GetMapping("/search")
+    public ResponseEntity<List<MemoryResponse>> search(
+            @RequestParam("query") String query, // Match the name in the URL
+            @AuthenticationPrincipal UserDetails userDetails) {
+        
+        // Use the same helper method you used in other endpoints
+        String userEmail = extractUserEmail(userDetails);
+        
+        List<MemoryResponse> results = memoryService.searchMemories(query, userEmail);
+        return ResponseEntity.ok(results);
+    }
+    
 }

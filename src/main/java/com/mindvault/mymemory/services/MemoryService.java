@@ -22,4 +22,6 @@ public interface MemoryService {
 
     // DELETE
     void deleteMemory(Long id, String userEmail);
+
+	List<MemoryResponse> searchMemories(String email, String keyword);
 }
